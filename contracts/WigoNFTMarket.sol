@@ -119,6 +119,9 @@ contract WigoNFTMarket is ERC721Holder, Ownable, ReentrancyGuard {
     // Referrer fee is updated
     event NewReferrerFee(uint256 referrerFee);
 
+    // WigoGalaxy Address is updated
+    event NewWigoGalaxyAddress(address indexed galaxy);
+
     // Minimum/maximum ask prices are updated
     event NewMinimumAndMaximumAskPrices(
         uint256 minimumAskPrice,
@@ -608,6 +611,25 @@ contract WigoNFTMarket is ERC721Holder, Ownable, ReentrancyGuard {
         referrerFee = _referrerFee;
 
         emit NewReferrerFee(_referrerFee);
+    }
+
+    /**
+     * @notice Set WigoGalaxy address
+     * @dev Only callable by owner
+     * @param _wigoGalaxyAddress: address of the WigoGalaxy
+     */
+    function setWigoGalaxyAddress(address _wigoGalaxyAddress)
+        external
+        onlyOwner
+    {
+        require(
+            _wigoGalaxyAddress != address(0),
+            "Operations: WigoGalaxy address cannot be zero"
+        );
+
+        galaxy = IWigoGalaxy(_wigoGalaxyAddress);
+
+        emit NewWigoGalaxyAddress(_wigoGalaxyAddress);
     }
 
     /**
