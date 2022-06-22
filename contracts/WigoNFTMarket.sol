@@ -32,14 +32,16 @@ contract WigoNFTMarket is ERC721Holder, Ownable, ReentrancyGuard {
 
     address public immutable WFTM;
 
-    uint256 public constant TOTAL_MAX_FEE = 1200; // 12% of a sale
-    uint256 public constant REFERRER_FEE = 150; // 1.5% seller's referral, 1.5% buyer's referral
+    uint256 public constant TOTAL_MAX_FEE = 1500; // 15% of a sale
+    uint256 public constant REFERRER_MAX_FEE = 250; // 2.5% seller's referral, 2.5% buyer's referral
 
     address public adminAddress;
     address public treasuryAddress;
 
     uint256 public minimumAskPrice; // in wei
     uint256 public maximumAskPrice; // in wei
+
+    uint256 public referrerFee;
 
     mapping(address => uint256) public pendingRevenue; // For creator/treasury to claim
 
@@ -114,6 +116,9 @@ contract WigoNFTMarket is ERC721Holder, Ownable, ReentrancyGuard {
         address indexed treasury
     );
 
+    // Referrer fee is updated
+    event NewReferrerFee(uint256 referrerFee);
+
     // Minimum/maximum ask prices are updated
     event NewMinimumAndMaximumAskPrices(
         uint256 minimumAskPrice,
@@ -163,7 +168,8 @@ contract WigoNFTMarket is ERC721Holder, Ownable, ReentrancyGuard {
         address _WFTMAddress,
         address _wigoGalaxyAddress,
         uint256 _minimumAskPrice,
-        uint256 _maximumAskPrice
+        uint256 _maximumAskPrice,
+        uint256 _referrerFee
     ) {
         require(
             _adminAddress != address(0),
@@ -189,6 +195,10 @@ contract WigoNFTMarket is ERC721Holder, Ownable, ReentrancyGuard {
             _minimumAskPrice < _maximumAskPrice,
             "Operations: _minimumAskPrice < _maximumAskPrice"
         );
+        require(
+            _referrerFee <= REFERRER_MAX_FEE,
+            "Operations: referrerFee must inferior to REFERRER_MAX_FEE"
+        );
 
         adminAddress = _adminAddress;
         treasuryAddress = _treasuryAddress;
@@ -199,6 +209,8 @@ contract WigoNFTMarket is ERC721Holder, Ownable, ReentrancyGuard {
 
         minimumAskPrice = _minimumAskPrice;
         maximumAskPrice = _maximumAskPrice;
+
+        referrerFee = _referrerFee;
     }
 
     /**
@@ -583,6 +595,22 @@ contract WigoNFTMarket is ERC721Holder, Ownable, ReentrancyGuard {
     }
 
     /**
+     * @notice Set referrer fee
+     * @dev Only callable by owner
+     * @param _referrerFee: New referrer fee
+     */
+    function setReferrerFee(uint256 _referrerFee) external onlyOwner {
+        require(
+            _referrerFee <= REFERRER_MAX_FEE,
+            "Operations: referrerFee must inferior to REFERRER_MAX_FEE"
+        );
+
+        referrerFee = _referrerFee;
+
+        emit NewReferrerFee(_referrerFee);
+    }
+
+    /**
      * @notice Check asks for an array of tokenIds in a collection
      * @param collection: address of the collection
      * @param tokenIds: array of tokenId
@@ -817,9 +845,9 @@ contract WigoNFTMarket is ERC721Holder, Ownable, ReentrancyGuard {
         uint256 count = _payReferrersFees(askOrder.seller, msg.sender, _price);
 
         if (count == 0) {
-            tradingFee += (_price * REFERRER_FEE) / 5000;
+            tradingFee += (_price * referrerFee) / 5000;
         } else if (count == 1) {
-            tradingFee += (_price * REFERRER_FEE) / 10000;
+            tradingFee += (_price * referrerFee) / 10000;
         }
 
         // Update pending revenues for treasury/creator (if any!)
@@ -872,9 +900,9 @@ contract WigoNFTMarket is ERC721Holder, Ownable, ReentrancyGuard {
     {
         tradingFee = (_askPrice * _collections[_collection].tradingFee) / 10000;
         creatorFee = (_askPrice * _collections[_collection].creatorFee) / 10000;
-        uint256 referrerFee = (_askPrice * REFERRER_FEE) / 10000;
+        uint256 refFee = (_askPrice * referrerFee) / 10000;
 
-        netPrice = _askPrice - tradingFee - creatorFee - (2 * referrerFee);
+        netPrice = _askPrice - tradingFee - creatorFee - (2 * refFee);
 
         return (netPrice, tradingFee, creatorFee);
     }
@@ -897,7 +925,7 @@ contract WigoNFTMarket is ERC721Holder, Ownable, ReentrancyGuard {
             if (sellerRefIsActive && sellerRef != address(0)) {
                 IERC20(WFTM).safeTransfer(
                     sellerRef,
-                    (_askPrice * REFERRER_FEE) / 10000
+                    (_askPrice * referrerFee) / 10000
                 );
                 count += 1;
             }
@@ -910,7 +938,7 @@ contract WigoNFTMarket is ERC721Holder, Ownable, ReentrancyGuard {
             if (buyerRefIsActive && buyerRef != address(0)) {
                 IERC20(WFTM).safeTransfer(
                     buyerRef,
-                    (_askPrice * REFERRER_FEE) / 10000
+                    (_askPrice * referrerFee) / 10000
                 );
                 count += 1;
             }
