@@ -37,7 +37,7 @@ contract WiggiesWhitelistChecker is Ownable, ICollectionWhitelistChecker {
 
     /**
      * @notice Remove restrictions tokens with specific wiggyIds to be sold
-     * @param _wiggyIds: wiggyIds to restrict for trading on the market
+     * @param _wiggyIds: wiggyIds to remove restriction for trading on the market
      */
     function removeRestrictionForWiggies(uint8[] calldata _wiggyIds) external onlyOwner {
         for (uint8 i = 0; i < _wiggyIds.length; i++) {

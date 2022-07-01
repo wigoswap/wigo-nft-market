@@ -33,7 +33,7 @@ contract WigoNFTMarket is ERC721Holder, Ownable, ReentrancyGuard {
     address public immutable WFTM;
 
     uint256 public constant TOTAL_MAX_FEE = 1500; // 15% of a sale
-    uint256 public constant REFERRER_MAX_FEE = 250; // 2.5% seller's referral, 2.5% buyer's referral
+    uint256 public constant REFERRER_MAX_FEE = 250; // 2.5% seller's referral and 2.5% buyer's referral
 
     address public adminAddress;
     address public treasuryAddress;
